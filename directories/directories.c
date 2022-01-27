@@ -1,3 +1,7 @@
+/*
+    PROGRAM TO LIST ALL FILES AND DIRECTORIES RECURSIVELY
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <dirent.h>
@@ -5,28 +9,23 @@
 
 #define MAX_NAME_LENGTH 255
 
-void open_dir();
+void list_dirs_and_contents();
 
 int main()
 {   
-    
-    char source[MAX_NAME_LENGTH], dest[MAX_NAME_LENGTH];
-
+    char source[MAX_NAME_LENGTH];
 
     printf("Input Directory: ");
-    scanf("%[^\n]", source);
+    fgets(source, MAX_NAME_LENGTH, stdin);
+    source[strlen(source) - 1 ] = 0;
 
-    printf("To: ");
-    scanf("%[^\n]", dest);
-
-    open_dir(source);
-
+    list_dirs_and_contents(source);
     
     return 0;
 }
 
 /*  List directories and files */
-void open_dir(char directory[]){
+void list_dirs_and_contents(char directory[]){
     DIR *dp;
     struct dirent *entity;
     char subdir[1024];
@@ -39,9 +38,9 @@ void open_dir(char directory[]){
         {    
             if ( strcmp(entity->d_name, ".") != 0 && strcmp(entity->d_name, "..") != 0 ){
                 if (entity->d_type == DT_DIR) {
-                    printf("directory: %s\n", entity->d_name);
+                    printf("\nDirectory: %s\n", entity->d_name);
                     sprintf(subdir, "%s/%s", directory, entity->d_name);
-                    open_dir(subdir);
+                    list_dirs_and_contents(subdir);
                 } else {
                     printf("File: %s\n", entity->d_name);
                 }
