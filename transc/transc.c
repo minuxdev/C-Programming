@@ -86,9 +86,10 @@ void make_dir(char dst[])
 void read_write(char file_name[], char new_file[])
 {
     FILE *sp, *dp;
-    char ch;
+    char buffer[128];
+    int byte = 1;
 
-    printf("File to read: %s\n\n", file_name);
+    memset(buffer, 0, sizeof(buffer));
     printf("File to write on: %s\n\n", new_file);
 
     sp = fopen(file_name, "rb");
@@ -101,12 +102,14 @@ void read_write(char file_name[], char new_file[])
             printf("Error writing into a file...\n");
             exit(1);
         } else {
-            while ( (ch = fgetc(sp)) != EOF ){
-                fputc(ch, dp);
+            printf("*** Reading bytes *** \n%d\n", byte);
+            while ( byte > 0 ){
+                byte = fread(buffer, sizeof(buffer), 1, sp);
+                fwrite(buffer, sizeof(buffer), 1, dp);
             }
             fclose(sp);
             fclose(dp);
-            printf("File transfered...");
+            printf("File transfered...\n");
         }
     }
 }

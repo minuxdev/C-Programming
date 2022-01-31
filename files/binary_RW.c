@@ -33,9 +33,10 @@ int main()
     wp = fopen(new_file, "wb");
 
     // Checking the status return
-    if (rp !=NULL){
+    if (rp != NULL){
         if (wp != NULL){
             printf("Copying: %s\n", file);
+            
             while (r > 0){
                 /*
                     buffer > array that hold the bytes
@@ -48,8 +49,8 @@ int main()
                 // writing bytes from buffer to wp
                 fwrite(buffer, sizeof(buffer), 1, wp);
                 transfered_byte += sizeof(buffer);
-                
-                printf("Transfered bytes: %d\n", transfered_byte);
+
+                // printf("Transfered bytes: %d\n", transfered_byte);
                 // system("clear");
             }
             printf("File created successfully!\n");
