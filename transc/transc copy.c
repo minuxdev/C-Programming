@@ -11,19 +11,16 @@ extern int errno;
 #define MODE 0775
 
 
-void copy_content(char src[], char new_path[]);
+void copy_content(char src[MAX_LEN], char dst[MAX_LEN]);
 void make_dir(char dst[]);
 void read_write(char file_name[], char new_file[]);
 void get_src_name(char *src, char *src_n);
-int check_source(char  *src);
+void create_parent_dir(char dst, char *src_dir, char src_n);
 
 int main(void)
 {
     char src[MAX_LEN], dst[MAX_LEN];
-    char src_n[100], new_path[MAX_LEN];
-    int check;
 
-    // Get paths: Sorce & Destiny
     printf("From: ");
     fgets(src, MAX_LEN, stdin);
     src[strlen(src) -1] = 0;
@@ -32,73 +29,58 @@ int main(void)
     fgets(dst, MAX_LEN, stdin);
     dst[strlen(dst) -1] = 0;
 
-    // Check if source is directory or file
-    // 0 = file; 1 = directory
-    check = check_source(src);
-
-    get_src_name(src, src_n);
-    sprintf(new_path, "%s/%s", dst, src_n);
-    
-    switch (check)
-    {
-    case 0:
-        printf("Source is file! %d\n", check);
-        read_write(src, new_path);
-        break;
-    case 1:
-        printf("Source is directory %d\n", check);
-        make_dir(new_path);
-
-        copy_content(src, new_path);
-
-        break;
-    default:
-        printf("Error opening source!");
-        break;
-    }
-
-    printf("*** Process Completed *** \n");
+    copy_content(src, dst);
     return 0;
 }
 
 
 // 1 - List Directory contents
-void copy_content(char src[MAX_LEN], char new_path[MAX_LEN])
+void copy_content(char src[MAX_LEN], char dst[MAX_LEN])
 {
     DIR *sp, *dp;
     struct dirent *entity;
     char name[100], subdir[100];
+    char src_n[100], src_dir[MAX_LEN];
+
+    puts(src);
+
 
     sp = opendir(src);
     if (sp == NULL){
-        perror("Open Sorce: ");
+        perror("Message: ");
         exit(1);
     } else {
-        dp = opendir(new_path);
+        dp = opendir(dst);
         if (dp == NULL){
-            perror("Open Dest: ");
+            printf("Error opening destiny path.");
+            perror("Error: ");
             exit(2);
         } else {
+            get_src_name(src, src_n);
+            sprintf(src_dir, "%s/%s", dst, src_n);
+            make_dir(&src_dir);
+
             while ( (entity = readdir(sp)) ){
                 if ( strcmp(entity->d_name, ".") != 0 && strcmp(entity->d_name, "..") != 0){
-                    
                     if (entity->d_type == DT_DIR){
-                        
-                        
-                        sprintf(name, "%s/%s", new_path, entity->d_name);
+                        printf("\nDirectory: %s\n", entity->d_name);
+                        sprintf(name, "%s/%s", dst, entity->d_name);
                         make_dir(name);
-                        printf("Name: %s/%s", new_path, entity->d_name);
+                        printf("New Dest: %s\n", name);
                         sprintf(subdir, "%s/%s", src, entity->d_name);
-                        
-                        copy_content(name, subdir);
+                        printf("Subdir: %s\n", subdir);
+
+                        copy_content(subdir, name);
 
                     } else {
-                        
-                        sprintf(name, "%s/%s", new_path, entity->d_name);
+                        sprintf(name, "%s/%s", dst, entity->d_name);
                         sprintf(subdir, "%s/%s", src, entity->d_name);
                         
-                        printf("Writing into... subdir: %s\nname: %s\n", subdir, name);
-                        
+                        printf("SRC: %s\nSUBDIR: %s\n", src, subdir);
+
+                        printf("Source File: %s\n", subdir);
+                        printf("Dest File: %s\n", name);
+
                         read_write(subdir, name);
                     }
                 }
@@ -107,18 +89,18 @@ void copy_content(char src[MAX_LEN], char new_path[MAX_LEN])
     }
 }
 
-// 2 - Make directory
 void make_dir(char dst[])
 {   
     int stat = mkdir(dst, MODE);
     if (stat == 0){
+        printf("\n**** Directory created successfully! ****\n");
     } else {
-        printf("%s Already exist!\n", dst);
-        perror("Make Dir: ");
+        perror("Message: ");
     }
 }
 
-// 3 -Read and Write content into new file
+
+// Read and Write content into new file
 void read_write(char file_name[], char new_file[])
 {
     FILE *sp, *dp;
@@ -126,29 +108,31 @@ void read_write(char file_name[], char new_file[])
     int byte = 1;
 
     memset(buffer, 0, sizeof(buffer));
+    // printf("File to write on: %s\n\n", new_file);
 
     sp = fopen(file_name, "rb");
     if ( sp == NULL ){
-
-        perror("Open File: ");
+        perror("Message: ");
         exit(1);
     } else {
-        dp = fopen(new_file, "wb+");
+        dp = fopen(new_file, "wb");
         if ( dp == NULL ) {
-            perror("Write New File: ");
+            perror("Message: ");
             exit(1);
         } else {
+            printf("*** Reading bytes *** \n%d\n", byte);
             while ( byte > 0 ){
                 byte = fread(buffer, sizeof(buffer), 1, sp);
                 fwrite(buffer, sizeof(buffer), 1, dp);
             }
             fclose(sp);
             fclose(dp);
+            printf("File transfered...\n");
         }
     }
 }
 
-// 4 - Get source name
+
 void get_src_name(char *src, char *src_n)
 {
     char *p1, *name;
@@ -162,31 +146,18 @@ void get_src_name(char *src, char *src_n)
         p1 = strtok(NULL, "/");
     }
     strcpy(src_n, name);
+    puts(src_n);
 }
 
-// 5 - Check if source is file or directory
-int check_source(char  *src)
+void create_parent_dir(char dst, char *src_dir, char src_n)
 {
-    DIR *dp;
-    FILE *fp;
-    struct dirent *entity;
-    
-    dp = opendir(src);
-    fp = fopen(src, "r");
+    puts(dst);
+    puts(src_dir);
+    puts(src_n);
 
-    if ( dp == NULL && fp == NULL ){
-        printf("Source is not a valid address...");
-        exit(9);
-    } else {
-        if (dp == NULL ){
-            return 0;
-        } else {
-            return 1;
-        }
-    }
-    closedir(dp);
-    fclose(fp);
-    return -1;
+    // strcpy(src_dir, dst);
+    // strcat(src_dir, "/");
+    // strcat(src_dir, src_n);
 }
 
 // /Users/minux/Documents/c-lab/source
